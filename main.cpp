@@ -21,6 +21,8 @@
 #include <FreeImage.h>
 #include <limits.h>
 #include <stdlib.h>
+#include <cstdlib>
+#include <cstdio>
 
 using namespace std ; 
 
@@ -28,6 +30,11 @@ using namespace std ;
 #define MAINPROGRAM 
 #include "variables.h" 
 #include "readfile.h" // prototipos de readfile.cpp  
+
+
+extern "C" void cuda_grises(BYTE * greybits, BYTE * greybits_PG, BYTE * bits, int N, int width, int scan_width);
+
+
 
 
 // Función que muestra texto por pantalla
@@ -92,17 +99,20 @@ int main(int argc, char* argv[]) {
   //buidem cache
   FreeImage_Unload(src);		
 
+ cuda_grises(greybits, greybits_PG, bits, width, scan_width, height * scan_width);
+
+
 // A escala de grisos
-  for (int i = 0; i < height; i++) {
-	  for (int j = 0; j < width; j++) {
-		  float r = (float) (bits[i * scan_width + j * 4 + 0]);
-		  float g = (float) (bits[i * scan_width + j * 4 + 1]);
-		  float b = (float) (bits[i * scan_width + j * 4 + 2]);
-		  float valor = 0.2126 * r + 0.7152 *g + 0.0722 * b;
-		  greybits[i * width + j] = (BYTE) (valor);
-		  greybits_PG[i * width + j] = greybits[i * width + j];              
-	  }
-  }	
+//   for (int i = 0; i < height; i++) {
+// 	  for (int j = 0; j < width; j++) {
+// 		  float r = (float) (bits[i * scan_width + j * 4 + 0]);
+// 		  float g = (float) (bits[i * scan_width + j * 4 + 1]);
+// 		  float b = (float) (bits[i * scan_width + j * 4 + 2]);
+// 		  float valor = 0.2126 * r + 0.7152 *g + 0.0722 * b;
+// 		  greybits[i * width + j] = (BYTE) (valor);
+// 		  greybits_PG[i * width + j] = greybits[i * width + j];              
+// 	  }
+//   }	
    
 
 //Apliquem Ponderació gausiano
