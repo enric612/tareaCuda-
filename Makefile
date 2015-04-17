@@ -14,13 +14,13 @@ OBJS = main.o
 # make and compile
 all: $(PROGRAMA)
 
-$(PROGRAMA): $(OBJS) $(GPUOBJS)
+$(PROGRAMA): cuda.o cpp.cpp
 	$(NVCC) -o $(PROGRAMA) $(GPUOBJS) $(OBJS) $(FLAGS) 
 
-$(GPUOBJS): $(CU)
+cuda.o: $(CU)
 	$(NVCC) -c $(CU)
 
-$(OBJS): $(CPP)
+cpp.cpp: $(CPP)
 	$(CXX) -c $(CPP) 
 
 clean: 
