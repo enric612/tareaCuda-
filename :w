@@ -27,41 +27,49 @@ static void HandleError( cudaError_t err, const char *file, int line)
 #define HANDLE_ERROR( err ) (HandleError( err, __FILE__, __LINE__ ))
 
 
-__global__ void cal_cuda_grises(BYTE * c_greybits,  BYTE * c_bits, int width, int scan_width)
+__global__ void cal_cuda_grises(BYTE * c_greybits, BYTE * c_greybits_PG, BYTE * c_bits, int width, int scan_width)
 {
-    int i = blockIdx.x*blockDim.x + threadIdx.x;
-    int j = blockIdx.y*blockDim.y + threadIdx.y;
+    int i = blockIdx.x;
+    int j = blockIdx.y;
 
     float r = (float) (c_bits[i * scan_width + j * 4 + 0]);
     float g = (float) (c_bits[i * scan_width + j * 4 + 1]);
     float b = (float) (c_bits[i * scan_width + j * 4 + 2]);
     float valor = 0.2126 * r + 0.7152 *g + 0.0722 * b;
     c_greybits[i * width + j] = (BYTE) (valor);
+    c_greybits_PG[i * width + j] = c_greybits[i * width + j];              
 }
 
 extern "C" void cuda_grises(BYTE * greybits, BYTE * greybits_PG, BYTE * bits, int height, int width, int scan_width)
 {
+    BYTE *c_greybits, *c_greybits_PG, *c_bits;
+    int *width_cuda, *scan_width_cuda;
 
-    BYTE *c_greybits, *c_bits;
-    int *variable_tonta ; // Per alguna extranya rao si no declare esta variable em
-                        // dona un error de illegal allocated memory ????
-
+    HANDLE_ERROR(cudaMalloc((void**)&width_cuda, sizeof(int)));
+    HANDLE_ERROR(cudaMalloc((void**)&scan_width_cuda, sizeof(int)));
     HANDLE_ERROR(cudaMalloc((void**)&c_bits, height*scan_width));
     HANDLE_ERROR(cudaMalloc((void**)&c_greybits, height*width));
+    HANDLE_ERROR(cudaMalloc((void**)&c_greybits_PG, height*width));
 
+    HANDLE_ERROR(cudaMemcpy(c_greybits, greybits, height*width, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(c_greybits_PG, greybits_PG, height*width, cudaMemcpyHostToDevice));
     HANDLE_ERROR(cudaMemcpy(c_bits, bits, height*scan_width, cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMalloc((void**)&variable_tonta,sizeof(int)));
     
+    int x = static_cast<int>(ceilf(static_cast<float>(width)/32));
+    int y = static_cast<int>(ceilf(static_cast<float>(height)/32));
 
-    int x = static_cast<int>(ceilf(static_cast<float>(width) / 32));
-    int y = static_cast<int>(ceilf(static_cast<float>(height) / 32));
     const dim3 red(x,y,1);
     const dim3 bloque(32,32,1);
-    cal_cuda_grises<<<red, bloque>>>(c_greybits, c_bits, width, scan_width);
-  
-    HANDLE_ERROR(cudaMemcpy(greybits,c_greybits,height*width,cudaMemcpyDeviceToHost));
+
+    cal_cuda_grises<<<red, bloque>>>(c_greybits, c_greybits_PG, c_bits, cuda_width, cuda_scan_width);
+
+    HANDLE_ERROR(cudaMemcpy(greybits, c_greybits, height*width, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(greybits_PG, c_greybits_PG, height*width, cudaMemcpyDeviceToHost));
     
     cudaFree(c_bits);
     cudaFree(c_greybits);
+    cudaFree(c_greybits_PG);
+    cudaFree(width_cuda);
+    cudaFree(scan_width_cuda);
 
 }

@@ -32,7 +32,7 @@ using namespace std ;
 #include "readfile.h" // prototipos de readfile.cpp  
 
 
-extern "C" void cuda_grises(BYTE * greybits, BYTE * greybits_PG, BYTE * bits, int N, int width, int scan_width);
+extern "C" void cuda_grises(BYTE * greybits, BYTE * greybits_PG, BYTE * bits, int height, int width, int scan_width);
 
 
 
@@ -99,40 +99,17 @@ int main(int argc, char* argv[]) {
   //buidem cache
   FreeImage_Unload(src);		
 
- cuda_grises(greybits, greybits_PG, bits, width, scan_width, height * scan_width);
+ cuda_grises(greybits, greybits_PG, bits, height, width, scan_width);
 
 
-// A escala de grisos
-//   for (int i = 0; i < height; i++) {
-// 	  for (int j = 0; j < width; j++) {
-// 		  float r = (float) (bits[i * scan_width + j * 4 + 0]);
-// 		  float g = (float) (bits[i * scan_width + j * 4 + 1]);
-// 		  float b = (float) (bits[i * scan_width + j * 4 + 2]);
-// 		  float valor = 0.2126 * r + 0.7152 *g + 0.0722 * b;
-// 		  greybits[i * width + j] = (BYTE) (valor);
-// 		  greybits_PG[i * width + j] = greybits[i * width + j];              
-// 	  }
-//   }	
    
 
-//Apliquem Ponderació gausiano
-  for (int i = 1; i < height; i++) {
-	  for (int j = 1; j < width; j++) {
-		  greybits_PG[i * width + j]=0;
-		  for(int z = 0; z < 3; z++){
-			for(int k=0; k < 3; k++){
-				greybits_PG[i * width + j] = (greybits_PG[i * width + j]) + 0.0625*((greybits[(i+(z-1)) * width + j+(k-1)]*des_gausiano[3*z + k]));		
-			}
-				 
-		   }	
-	  }
-   }
 
 // Sortides
   for (int i = 0; i < height; i++) {
 	  for (int j = 0; j < width; j++) {
 		  for (int c = 0; c<3; c++) {
-			outputbits[i * scan_width + j * 4 + c] = greybits_PG[i * width + j];
+			outputbits[i * scan_width + j * 4 + c] = greybits[i * width + j];
 		  }
 		outputbits[i * scan_width + j * 4 + 3] = bits[i * scan_width + j * 4 + 3];
 	  }
