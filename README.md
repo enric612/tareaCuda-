@@ -2,6 +2,12 @@
 
 ##Autors:
 
-###Enric Climent Martí
-###Borja Fuster Sebastiá
+####Enric Climent Martí
+####Borja Fuster Sebastiá
+
+#####Per a compilar :
+     $ make
+
+#####Per a netejar abans de recompilar:
+     $ make clean
 
